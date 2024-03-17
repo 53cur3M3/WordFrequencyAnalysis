@@ -39,6 +39,7 @@ my %textsByFile;
 my %textsByWord;
 my %wordCountByFile;
 my %wordCountByWord;
+my $totalWords;
 
 my %nonAlphaChar;
 
@@ -109,6 +110,7 @@ foreach my $file ( @ARGV ) {
 			}
 			$wordCountByFile{$file}++;
 			$wordCountByWord{$word}++;
+			$totalWords++;
 		}
 		warn "[$line]\n" if $DEBUG > 999;
 	}
@@ -129,23 +131,36 @@ if ( $SORT eq 'ALPHA' ) {
 	warn "Alphabetic Sort\n" if $DEBUG > 10;
 
 	# print Header
-	print "Word\t" . (join "\t", @files) . "\n";
+	#print "Word\t" . (join "\t", @files) . "\n";
+	print "Word";
+	foreach my $file ( @files) {
+		print "\t$file Count\t$file Percentage"
+	}
+	print "\tTotal Count\tTotal Percentage\n";
 
 	foreach my $word ( sort keys %textsByWord ) {
 		next if $word =~ /^\d+$/ && $IGNORE_NUMBERS_OUTPUT > 0;
-		print "$word\t";
+		print "$word";
 		#print ">$word<\t";
 		foreach my $file ( @files ) {
-			print defined($textsByWord{$word}{$file}) ? "$textsByWord{$word}{$file}\t" : "-\t";
+			if ( defined($textsByWord{$word}{$file})) {
+				my $percentage=($textsByWord{$word}{$file}/$wordCountByFile{$file})*100;
+				print "\t$textsByWord{$word}{$file}\t$percentage";
+			} else {
+			       print "\t0\t0";
+			}
+			#print defined($textsByWord{$word}{$file}) ? "$textsByWord{$word}{$file}\t" : "-\t";
 		}
-		print "\n";
+		my $totalPercentage=($wordCountByWord{$word}/$totalWords)*100;
+		print "\t$wordCountByWord{$word}\t$totalPercentage\n";
 	}
 
 	# print Totals
-	print "\nTOTAL\t";
+	print "\nTOTAL";
 	foreach my $file (@files) {
-		print "$wordCountByFile{$file}\t";
+		print "\t$wordCountByFile{$file}\t100";
 	}
+	print "\n";
 }
 if ( $SORT eq 'FREQ' ) {
 	warn "Word Frequency Sort\n" if $DEBUG > 10;
