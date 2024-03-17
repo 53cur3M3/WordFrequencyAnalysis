@@ -116,10 +116,12 @@ foreach my $file ( @ARGV ) {
 	print "... Done\n";
 }
 
-# Debugging non alpha characters
-foreach my $nonAlphaChar (sort keys %nonAlphaChar) {
-	my $charCode=ord($nonAlphaChar);
-	print "NON ALPHA CHAR: >$nonAlphaChar< ($charCode) $nonAlphaChar{$nonAlphaChar}\n";
+if ( $DEBUG > 20 ) {
+	# Debugging non alpha characters
+	foreach my $nonAlphaChar (sort keys %nonAlphaChar) {
+		my $charCode=ord($nonAlphaChar);
+		print "NON ALPHA CHAR: >$nonAlphaChar< ($charCode) $nonAlphaChar{$nonAlphaChar}\n";
+	}
 }
 
 
