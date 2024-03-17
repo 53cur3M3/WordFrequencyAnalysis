@@ -17,10 +17,14 @@ my $STRIP_PATTERN='[\s,\.:;_()[\]?\'"`’!]+';
 #   1 : convert all words to lowercase: Away => away
 #   0 : Case sensitive: Away != away
 my $LOWERCASE=1;
-# Supported IGNORE_NUMBERS values:
-#   0 : Output includes frequency of numbers
-#   1 : Output does not include frequency of numbers
-my $IGNORE_NUMBERS=1;
+# Supported IGNORE_NUMBERS_INPUT values:
+#   0 : Include numeric values in word frequency statistics
+#   1 : Exclude numeric values in word frequency statictics
+my $IGNORE_NUMBERS_INPUT=1;
+# Supported IGNORE_NUMBERS_OUTPUT values:
+#   0 : Include numeric values in output
+#   1 : Exclude numeric values from output
+my $IGNORE_NUMBERS_OUTPUT=1;
 
 my $DEBUG = 80;
 
@@ -84,7 +88,8 @@ foreach my $file ( @ARGV ) {
 
 		# Split line into words:
 		foreach my $word ( split /\s+/, $line ) {
-			next if $word =~ /^\s*$/g;
+			next if $word =~ /^\s*$/;
+			next if $word =~ /^\d+$/ && $IGNORE_NUMBERS_INPUT > 0;
 			$word = lc($word) if $LOWERCASE > 0;
 			warn "WORD: [$word]\n" if $DEBUG > 9999;
 			$textsByFile{$file}{$word}++;
@@ -110,7 +115,7 @@ if ( $SORT eq 'ALPHA' ) {
 	print "Word\t" . (join "\t", @files) . "\n";
 
 	foreach my $word ( sort keys %textsByWord ) {
-		next if $word =~ /^\d+$/ && $IGNORE_NUMBERS > 0;
+		next if $word =~ /^\d+$/ && $IGNORE_NUMBERS_OUTPUT > 0;
 		print "$word\t";
 		#print ">$word<\t";
 		foreach my $file ( @files ) {
