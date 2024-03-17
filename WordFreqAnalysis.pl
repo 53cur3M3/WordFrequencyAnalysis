@@ -12,26 +12,35 @@ use warnings;
 #   ALPHA : Alphabetical sort by word
 #   FREQ  : Sort by word frequency
 my $SORT = 'ALPHA';
-my $STRIP_PATTERN='[\s,\.:;_()[\]?\'"`’!]+';
+
+#my $STRIP_PATTERN='[\s,\.\\\/:;_(){}[\]?\'"`’\p{Pi}\p{Pf}!]+';
+my $STRIP_PATTERN='[\s,\.\\\/:;_(){}[\]?&*^\'"`’!' . chr(147) . chr(148) . chr(156) . chr(157) . chr(162) . ']+';
+
 # Supported LOWERCASE values:
 #   1 : convert all words to lowercase: Away => away
 #   0 : Case sensitive: Away != away
 my $LOWERCASE=1;
+
 # Supported IGNORE_NUMBERS_INPUT values:
 #   0 : Include numeric values in word frequency statistics
 #   1 : Exclude numeric values in word frequency statictics
 my $IGNORE_NUMBERS_INPUT=1;
+
 # Supported IGNORE_NUMBERS_OUTPUT values:
 #   0 : Include numeric values in output
 #   1 : Exclude numeric values from output
 my $IGNORE_NUMBERS_OUTPUT=1;
 
-my $DEBUG = 80;
+
+my $DEBUG = 100;
 
 my @files;
 my %textsByFile;
 my %textsByWord;
-my %wordCount;
+my %wordCountByFile;
+my %wordCountByWord;
+
+my %nonAlphaChar;
 
 my %merge = ( 'children' => '__child',
 	      'child' => '__child',
@@ -67,6 +76,11 @@ foreach my $file ( @ARGV ) {
 		# Skip blank lines
 		next if $line =~ /^\s*$/;
 
+		if ( $line =~ /([^A-Za-z0-9- ])/ ) {
+			$nonAlphaChar{$1}++;
+			#warn "NON-ALPHA CHAR: >$1<\n";
+		}
+
 		# Check for non-alphanumerics
 		if ( $line !~/^[A-Za-z0-9- ]*$/ ) {
 			warn "Stripping additional non-alphanumerics [$line]\n" if $DEBUG > 99;
@@ -80,12 +94,6 @@ foreach my $file ( @ARGV ) {
 		# Remove trailing spaces:
 		$line =~ s/\s*$//g;
 
-		# Check for non-alphanumerics 2
-		#if ( $line !~/^[A-Za-z0-9- ]*$/ ) {
-		#	warn "SECOND Stripping additional non-alphanumerics [$line]\n";
-		#	$line =~ s/[^A-Za-z0-9- ]+//g;
-		#}
-
 		# Split line into words:
 		foreach my $word ( split /\s+/, $line ) {
 			next if $word =~ /^\s*$/;
@@ -95,11 +103,12 @@ foreach my $file ( @ARGV ) {
 			$textsByFile{$file}{$word}++;
 			$textsByWord{$word}{$file}++;
 			if (defined($merge{$word})) {
-				warn "Merging $word : $merge{$word}\n" if $DEBUG > 80;
+				warn "Merging $word : $merge{$word}\n" if $DEBUG > 120;
 				$textsByFile{$file}{$merge{$word}}++;
 				$textsByWord{$merge{$word}}{$file}++;
 			}
-			$wordCount{$file}++;
+			$wordCountByFile{$file}++;
+			$wordCountByWord{$word}++;
 		}
 		warn "[$line]\n" if $DEBUG > 999;
 	}
@@ -107,9 +116,15 @@ foreach my $file ( @ARGV ) {
 	print "... Done\n";
 }
 
+# Debugging non alpha characters
+foreach my $nonAlphaChar (sort keys %nonAlphaChar) {
+	my $charCode=ord($nonAlphaChar);
+	print "NON ALPHA CHAR: >$nonAlphaChar< ($charCode) $nonAlphaChar{$nonAlphaChar}\n";
+}
+
 
 if ( $SORT eq 'ALPHA' ) {
-	warn "Alpha Sort\n" if $DEBUG > 10;
+	warn "Alphabetic Sort\n" if $DEBUG > 10;
 
 	# print Header
 	print "Word\t" . (join "\t", @files) . "\n";
@@ -122,14 +137,12 @@ if ( $SORT eq 'ALPHA' ) {
 			print defined($textsByWord{$word}{$file}) ? "$textsByWord{$word}{$file}\t" : "-\t";
 		}
 		print "\n";
-		#print "x";
-		#foreach my $word ( sort keys %texts{$col} )
 	}
 
 	# print Totals
 	print "\nTOTAL\t";
 	foreach my $file (@files) {
-		print "$wordCount{$file}\t";
+		print "$wordCountByFile{$file}\t";
 	}
 }
 if ( $SORT eq 'FREQ' ) {
